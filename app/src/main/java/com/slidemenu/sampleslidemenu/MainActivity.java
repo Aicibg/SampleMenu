@@ -9,7 +9,9 @@ import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener{
     //显示和隐藏menu时手指滑动的速度
@@ -21,7 +23,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     //menu完全显示时leftmargin的值
     private int rightEdge=0;
     //menu完全显示时距离右侧屏幕边缘的距离
-    private int menuPadding=80;
+    private int menuPadding=180;
     private View menu;
     private View content;
     private LinearLayout.LayoutParams menuParams;
@@ -32,21 +34,42 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private boolean menuVisivble;
     //计算手指滑动速度
     private VelocityTracker mvelocityTracker;
+    private Button btMenu,btContent;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initValues();
         content.setOnTouchListener(this);
+        btMenu.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(MainActivity.this,"点击menu",Toast.LENGTH_SHORT).show();
+            }
+        });
+        btContent.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(!menuVisivble) {
+                    scrolltomenu();
+                }else{
+                    scrolltocontent();
+                }
+                Toast.makeText(MainActivity.this,"点击Content",Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void initValues() {
+        btContent= (Button) findViewById(R.id.bt_content);
+        btMenu= (Button) findViewById(R.id.bt_menu);
         content=findViewById(R.id.ll_content);
         menu=findViewById(R.id.ll_menu);
         WindowManager manager= (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         DisplayMetrics metrics=new DisplayMetrics();
         manager.getDefaultDisplay().getMetrics(metrics);
         screenWidth=metrics.widthPixels;
+        menuPadding=screenWidth/3;
         menuParams= (LinearLayout.LayoutParams) menu.getLayoutParams();
         //menu的宽度
         menuParams.width=screenWidth-menuPadding;
@@ -159,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         protected Integer doInBackground(Integer... params) {
             int leftMargin=menuParams.leftMargin;
             while (true) {
-                //根据传入速度改变leftmargin
+                //根据传入速度循环改变leftmargin
                 leftMargin=leftMargin+params[0];
                 if (leftMargin > rightEdge) {
                     leftMargin = rightEdge;

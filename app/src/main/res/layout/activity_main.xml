@@ -13,6 +13,12 @@
         android:background="@mipmap/menu"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
+        <Button
+            android:id="@+id/bt_menu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="SlideMenu"/>
     </LinearLayout>
 
     <LinearLayout
@@ -21,5 +27,11 @@
         android:id="@+id/ll_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
+        <Button
+            android:id="@+id/bt_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Content"/>
     </LinearLayout>
 </LinearLayout>
