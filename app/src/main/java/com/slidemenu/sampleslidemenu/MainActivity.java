@@ -14,16 +14,21 @@ import android.widget.LinearLayout;
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener{
     //显示和隐藏menu时手指滑动的速度
    private static final int SNAP_VELOCITY=200;
+    //屏幕宽度
     private int screenWidth;
+    //初始化时menu的leftmargin的值
     private int leftEdge;
+    //menu完全显示时leftmargin的值
     private int rightEdge=0;
-    private int menuPadding;
+    //menu完全显示时距离右侧屏幕边缘的距离
+    private int menuPadding=80;
     private View menu;
     private View content;
     private LinearLayout.LayoutParams menuParams;
     private float xDown;
     private float xMove;
     private float xUp;
+    //menu是否是显示的状态
     private boolean menuVisivble;
     //计算手指滑动速度
     private VelocityTracker mvelocityTracker;
@@ -43,8 +48,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         manager.getDefaultDisplay().getMetrics(metrics);
         screenWidth=metrics.widthPixels;
         menuParams= (LinearLayout.LayoutParams) menu.getLayoutParams();
+        //menu的宽度
         menuParams.width=screenWidth-menuPadding;
-        leftEdge=menuParams.width;
+        leftEdge=-menuParams.width;
+        //初始化时menu的leftmargin
         menuParams.leftMargin=leftEdge;
         content.getLayoutParams().width=screenWidth;
     }
@@ -58,11 +65,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 xDown=event.getRawX();
                 break;
             case MotionEvent.ACTION_MOVE:
+                //滑动时x轴坐标
                 xMove=event.getRawX();
                 int distanceX= (int) (xMove-xDown);
                 if(menuVisivble){
+                    //menu显示时
                     menuParams.leftMargin=distanceX;
                 }else{
+                    //menu不显示时
                     menuParams.leftMargin=leftEdge+distanceX;
                 }
                 if(menuParams.leftMargin<leftEdge){
@@ -74,24 +84,58 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 break;
             case MotionEvent.ACTION_UP:
                 xUp=event.getRawX();
+                //判断要显示menu
                 if(wantshowmenu()){
+                    //根据手势滑动判断是否允许显示menu
                    if(shouldScrolltomenu()){
+                       scrolltomenu();
+                   }else{
+                       scrolltocontent();
+                   }
+                    //判断要显示content
+                }else if(wanttoshowcontent()){
+                    //根据手势滑动判断是否允许显示content
+                   if(shouldScrolltocontent()){
+                       scrolltocontent();
+                   }else{
                        scrolltomenu();
                    }
                 }
+                recycleVelocityTracker();
                 break;
         }
-        return false;
+        return true;
+    }
+   //回收VelocityTracker
+    private void recycleVelocityTracker() {
+        mvelocityTracker.recycle();
+        mvelocityTracker=null;
+    }
+
+    private boolean shouldScrolltocontent() {
+        return xDown-xUp+menuPadding>screenWidth/2||getScrollVelocity()>SNAP_VELOCITY;
+    }
+
+    private boolean wanttoshowcontent() {
+        return xUp-xDown<0&&menuVisivble;
+    }
+
+    private void scrolltocontent() {
+        new ScrollTask().execute(-30);
     }
 
     private void scrolltomenu() {
-
+          new ScrollTask().execute(30);
     }
 
     private boolean shouldScrolltomenu() {
         return xUp-xDown>screenWidth/2||getScrollVelocity()>SNAP_VELOCITY;
     }
 
+    /**
+     * 获取在content的x轴上滑动的速度
+     * @return 每秒钟滑动距离的像素值
+     */
     private int getScrollVelocity() {
         mvelocityTracker.computeCurrentVelocity(1000);
         int velocity= (int) mvelocityTracker.getXVelocity();
@@ -113,7 +157,47 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         @Override
         protected Integer doInBackground(Integer... params) {
-            return null;
+            int leftMargin=menuParams.leftMargin;
+            while (true) {
+                //根据传入速度改变leftmargin
+                leftMargin=leftMargin+params[0];
+                if (leftMargin > rightEdge) {
+                    leftMargin = rightEdge;
+                    break;
+                }
+                if(leftMargin<leftEdge){
+                    leftMargin=leftEdge;
+                    break;
+                }
+                publishProgress(leftMargin);
+                sleep(20);
+            }
+            if(params[0]>0){
+                menuVisivble=true;
+            }else{
+                menuVisivble=false;
+            }
+            return leftMargin;
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            menuParams.leftMargin=values[0];
+            menu.setLayoutParams(menuParams);
+        }
+
+        @Override
+        protected void onPostExecute(Integer integer) {
+            menuParams.leftMargin=integer;
+            menu.setLayoutParams(menuParams);
+        }
+    }
+
+    private void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 }
